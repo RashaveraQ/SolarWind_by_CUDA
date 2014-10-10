@@ -62,8 +62,6 @@
 
 #include <vector_types.h>
 
-#include "SolarWindSystem.h"
-
 #define MAX_EPSILON_ERROR 10.0f
 #define THRESHOLD          0.30f
 #define REFRESH_DELAY     10 //ms
@@ -83,8 +81,6 @@ float3 h_axis;
 float3 *d_axis;
 
 int mode = 0;
-
-SolarWindSystem *psystem = 0;
 
 enum { M_VIEW = 0, M_MOVE };
 
@@ -724,9 +720,8 @@ void motion(int x, int y)
     dx = (float)(x - mouse_old_x);
     dy = (float)(y - mouse_old_y);
 
-	switch (mode) {
+	switch (glutGetModifiers()) {
 	default:
-	case M_VIEW:
 		if (mouse_buttons & 1)
 		{
 			rotate_x += dy * 0.2f;
@@ -737,8 +732,8 @@ void motion(int x, int y)
 			translate_z += dy * 0.01f;
 		}
 		break;
-	case M_MOVE:
-		
+
+	case GLUT_ACTIVE_CTRL:
 		if (mouse_buttons & 1)
 		{
 			float sx = sin(dx);
