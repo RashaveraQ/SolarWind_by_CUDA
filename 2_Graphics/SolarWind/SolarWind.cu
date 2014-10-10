@@ -68,8 +68,8 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // constants
-const unsigned int window_width  = 512;
-const unsigned int window_height = 512;
+const unsigned int window_width  = 1024;
+const unsigned int window_height = 1024;
 
 const unsigned int mesh_width    = 256;
 const unsigned int mesh_height   = 256;
@@ -314,15 +314,15 @@ void setAxis(float x, float y, float z)
 	h_axis = make_float3(x, y, z);
 	h_axis_radius = sqrtf(h_axis.x * h_axis.x + h_axis.y * h_axis.y + h_axis.z * h_axis.z);
 
-	gkLightPos[0] = 10000 * h_axis.x;
-	gkLightPos[1] = 10000 * h_axis.y;
-	gkLightPos[2] = 10000 * h_axis.z;
-	gkLightPos[3] = 0,1;
+	gkLightPos[0] = h_axis.x;
+	gkLightPos[1] = h_axis.y;
+	gkLightPos[2] = h_axis.z;
+	gkLightPos[3] = 0;
 
-	gkLightPos2[0] = -10000 * h_axis.x;
-	gkLightPos2[1] = -10000 * h_axis.y;
-	gkLightPos2[2] = -10000 * h_axis.z;
-	gkLightPos2[3] = 0,1;
+	gkLightPos2[0] = -h_axis.x;
+	gkLightPos2[1] = -h_axis.y;
+	gkLightPos2[2] = -h_axis.z;
+	gkLightPos2[3] = 0;
 
 	size_t size = sizeof(float3);
 	cudaMalloc(&d_axis, size);
@@ -628,11 +628,10 @@ void deleteVBO(GLuint *vbo, struct cudaGraphicsResource *vbo_res)
 }
 
 //ライト定数
-//const GLfloat gkLightPos[4] ={ 10,10,0,1};
-//const GLfloat gkLightPos2[4] ={ -10,-10,0,1};
-const GLfloat gkLightDiff[4] ={ 0xFF, 0x00, 0x00, 0x00};
-const GLfloat gkLightDiff2[4] ={ 0x00, 0x00, 0xFF, 0x00};
-const GLfloat gkLightAmb[4] ={ 0x01, 0x01, 0x01, 0x00};
+const GLfloat gkLightDiff[] ={ 0x0F, 0x00, 0x00, 0x00};
+const GLfloat gkLightDiff2[] ={ 0x00, 0x00, 0x0F, 0x00};
+//const GLfloat gkLightAmb[] ={ 0x01, 0x01, 0x01, 0x00};
+//const GLfloat gkMaterial[] = { 1.0f, 1.0f, 1.0f, 0.2f}; 
 
 ////////////////////////////////////////////////////////////////////////////////
 //! Display callback
@@ -644,7 +643,18 @@ void display()
     // run CUDA kernel to generate vertex positions
     runCuda(&cuda_vbo_resource);
 
+	//簡易ライトセット
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	glLightfv(GL_LIGHT0, GL_POSITION, gkLightPos);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, gkLightDiff);
+//	glLightfv(GL_LIGHT0, GL_AMBIENT, gkLightAmb);
+	glEnable(GL_LIGHT1);
+	glLightfv(GL_LIGHT1, GL_POSITION, gkLightPos2);
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, gkLightDiff2);
 
+	//Zバッファ有効
+	glEnable(GL_DEPTH_TEST);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // set view matrix
@@ -655,22 +665,9 @@ void display()
     glRotatef(rotate_y, 0.0, 1.0, 0.0);
 
 	// Earth
-	//簡易ライトセット
-	glEnable( GL_LIGHTING );
-	glEnable( GL_LIGHT0 );
-	glLightfv( GL_LIGHT0, GL_POSITION, gkLightPos );
-	glLightfv( GL_LIGHT0, GL_DIFFUSE, gkLightDiff );
-	glLightfv( GL_LIGHT0, GL_AMBIENT, gkLightAmb );
-	glEnable( GL_LIGHT1 );
-	glLightfv( GL_LIGHT1, GL_POSITION, gkLightPos2 );
-	glLightfv( GL_LIGHT1, GL_DIFFUSE, gkLightDiff2 );
-
-	glColor3f(0.0, 0.0, 1.0);
-	glutSolidSphere(100.0 * h_axis_radius, 20, 20);
-
-	glDisable( GL_LIGHT1 );
-	glDisable( GL_LIGHT0 );
-	glDisable( GL_LIGHTING );
+//	glMaterialfv(GL_FRONT, GL_DIFFUSE, gkMaterial);
+	glutSolidSphere(50.0 * h_axis_radius, 20, 20);
+	glDisable(GL_LIGHTING);
 
     // render from the vbo
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -799,7 +796,7 @@ void motion(int x, int y)
 		}
 		else if (mouse_buttons & 4)
 		{
-			float r = (dy > 0) ? 1.01f : 0.99f;
+			float r = (dy > 0) ? 1.05f : 0.95f;
 			setAxis(r * h_axis.x, r * h_axis.y, r * h_axis.z);
 		}
 		break;
