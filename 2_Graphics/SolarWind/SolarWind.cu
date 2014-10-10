@@ -62,6 +62,8 @@
 
 #include <vector_types.h>
 
+#include "SolarWindSystem.h"
+
 #define MAX_EPSILON_ERROR 10.0f
 #define THRESHOLD          0.30f
 #define REFRESH_DELAY     10 //ms
@@ -75,6 +77,11 @@ const unsigned int mesh_width    = 256;
 const unsigned int mesh_height   = 256;
 
 float4 *d_vec;
+int mode = 0;
+
+SolarWindSystem *psystem = 0;
+
+enum { M_VIEW = 0, M_MOVE };
 
 // vbo variables
 GLuint vbo;
@@ -408,6 +415,11 @@ bool initGL(int *argc, char **argv)
     return true;
 }
 
+void initSolarWindSystem()
+{
+	psystem = new SolarWindSystem();
+	psystem->reset();
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 //! Run a simple test for CUDA
@@ -457,6 +469,8 @@ bool runTest(int argc, char **argv, char *ref_file)
             cudaGLSetGLDevice(gpuGetMaxGflopsDeviceId());
         }
 
+		initSolarWindSystem();
+
         // register callbacks
         glutDisplayFunc(display);
         glutKeyboardFunc(keyboard);
@@ -476,6 +490,9 @@ bool runTest(int argc, char **argv, char *ref_file)
 
         // start rendering mainloop
         glutMainLoop();
+
+		if (psystem)
+			delete psystem;
     }
 
     return true;
@@ -654,6 +671,17 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
         case (27) :
             exit(EXIT_SUCCESS);
             break;
+
+		case 'v':
+			mode = M_VIEW;
+			break;
+
+		case 'm':
+			mode = M_MOVE;
+
+		case 'r':
+			psystem->reset();
+			break;
     }
 }
 
