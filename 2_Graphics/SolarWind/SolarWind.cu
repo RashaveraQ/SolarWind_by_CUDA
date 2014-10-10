@@ -314,6 +314,14 @@ void reset()
 	cudaMemcpy(d_vec, h_vec, size, cudaMemcpyHostToDevice);
 }
 
+void setAxis(float x, float y, float z)
+{
+	h_axis = make_float3(x, y, z);
+	size_t size = sizeof(float3);
+	cudaMalloc(&d_axis, size);
+	cudaMemcpy(d_axis, &h_axis, size, cudaMemcpyHostToDevice);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Program main
 ////////////////////////////////////////////////////////////////////////////////
@@ -350,10 +358,7 @@ int main(int argc, char **argv)
 	}
 	cudaMalloc(&d_vec, size);
 
-	h_axis = make_float3(0.0003f, 0.002f, 0.001f);
-	size = sizeof(float3);
-	cudaMalloc(&d_axis, size);
-	cudaMemcpy(d_axis, &h_axis, size, cudaMemcpyHostToDevice);
+	setAxis(0.0003f, 0.002f, 0.001f);
 
 	reset();
 
@@ -687,6 +692,7 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 
 		case 'm':
 			mode = M_MOVE;
+			break;
 
 		case 'r':
 			reset();
@@ -718,15 +724,38 @@ void motion(int x, int y)
     dx = (float)(x - mouse_old_x);
     dy = (float)(y - mouse_old_y);
 
-    if (mouse_buttons & 1)
-    {
-        rotate_x += dy * 0.2f;
-        rotate_y += dx * 0.2f;
-    }
-    else if (mouse_buttons & 4)
-    {
-        translate_z += dy * 0.01f;
-    }
+	switch (mode) {
+	default:
+	case M_VIEW:
+		if (mouse_buttons & 1)
+		{
+			rotate_x += dy * 0.2f;
+			rotate_y += dx * 0.2f;
+		}
+		else if (mouse_buttons & 4)
+		{
+			translate_z += dy * 0.01f;
+		}
+		break;
+	case M_MOVE:
+		
+		if (mouse_buttons & 1)
+		{
+			float sx = sin(dx);
+			float cx = cos(dx);
+			float sy = sin(dy);
+			float cy = cos(dy);
+			setAxis(cx * h_axis.x - sx * cy * h_axis.y + sx * sy * h_axis.z, 
+			        sx * h_axis.x + cx * cy * h_axis.y - cx * sy * h_axis.z,
+					                     sy * h_axis.y +      cy * h_axis.z );
+		}
+		else if (mouse_buttons & 4)
+		{
+			float r = (dy > 0) ? 1.01f : 0.99f;
+			setAxis(r * h_axis.x, r * h_axis.y, r * h_axis.z);
+		}
+		break;
+	}
 
     mouse_old_x = x;
     mouse_old_y = y;
