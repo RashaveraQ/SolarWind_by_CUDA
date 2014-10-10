@@ -334,7 +334,7 @@ int main(int argc, char **argv)
 	size_t size = N * sizeof(float4);
 	float4 *h_vec = (float4*)malloc(size);
 	for (int i = 0; i < N; i++) {
-		h_vec[i] = make_float4(0.0f, 0.01f, 0.0f, 0.0f);
+		h_vec[i] = make_float4(0.0f, 0.01f, 0.0f, 200.0f);
 	}
 	cudaMalloc(&d_vec, size);
 	cudaMemcpy(d_vec, h_vec, size, cudaMemcpyHostToDevice);
