@@ -345,7 +345,6 @@ int main(int argc, char **argv)
 
     printf("\n");
 
-//	psystem = new SolarWindSystem();
 	int N = mesh_width * mesh_height;
 	size_t size = N * sizeof(float4);
 	h_vec = (float4*)malloc(size);
@@ -354,13 +353,12 @@ int main(int argc, char **argv)
 	}
 	cudaMalloc(&d_vec, size);
 
-	setAxis(0.0003f, 0.002f, 0.001f);
+	setAxis(0.001f, 0.0, 0.0);
 
 	reset();
 
     runTest(argc, argv, ref_file);
 
-//	delete psystem;
     // cudaDeviceReset causes the driver to clean up all state. While
     // not mandatory in normal operation, it is good practice.  It is also
     // needed to ensure correct operation when the application is being
@@ -618,6 +616,13 @@ void deleteVBO(GLuint *vbo, struct cudaGraphicsResource *vbo_res)
     *vbo = 0;
 }
 
+//ライト定数
+//const GLfloat gkLightPos[4] ={ 10,10,0,1};
+//const GLfloat gkLightPos2[4] ={ -10,-10,0,1};
+const GLfloat gkLightDiff[4] ={ 0xFF, 0x00, 0x00, 0x00};
+const GLfloat gkLightDiff2[4] ={ 0x00, 0x00, 0xFF, 0x00};
+const GLfloat gkLightAmb[4] ={ 0x01, 0x01, 0x01, 0x00};
+
 ////////////////////////////////////////////////////////////////////////////////
 //! Display callback
 ////////////////////////////////////////////////////////////////////////////////
@@ -628,6 +633,7 @@ void display()
     // run CUDA kernel to generate vertex positions
     runCuda(&cuda_vbo_resource);
 
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // set view matrix
@@ -636,6 +642,27 @@ void display()
     glTranslatef(0.0, 0.0, translate_z);
     glRotatef(rotate_x, 1.0, 0.0, 0.0);
     glRotatef(rotate_y, 0.0, 1.0, 0.0);
+
+	// Earth
+	GLfloat gkLightPos[] = {  10000 * h_axis.x,  10000 * h_axis.y,  10000 * h_axis.z, 0,1};
+	GLfloat gkLightPos2[] ={ -10000 * h_axis.x, -10000 * h_axis.y, -10000 * h_axis.z, 0,1};
+	//簡易ライトセット
+	glEnable( GL_LIGHTING );
+	glEnable( GL_LIGHT0 );
+	glLightfv( GL_LIGHT0, GL_POSITION, gkLightPos );
+	glLightfv( GL_LIGHT0, GL_DIFFUSE, gkLightDiff );
+	glLightfv( GL_LIGHT0, GL_AMBIENT, gkLightAmb );
+	glEnable( GL_LIGHT1 );
+	glLightfv( GL_LIGHT1, GL_POSITION, gkLightPos2 );
+	glLightfv( GL_LIGHT1, GL_DIFFUSE, gkLightDiff2 );
+
+	GLdouble r = 100.0 * sqrt(h_axis.x * h_axis.x + h_axis.y * h_axis.y + h_axis.z * h_axis.z);
+	glColor3f(0.0, 0.0, 1.0);
+	glutSolidSphere(r, 20, 20);
+
+	glDisable( GL_LIGHT1 );
+	glDisable( GL_LIGHT0 );
+	glDisable( GL_LIGHTING );
 
     // render from the vbo
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
