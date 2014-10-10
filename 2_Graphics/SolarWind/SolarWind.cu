@@ -83,10 +83,6 @@ float  h_axis_radius;
 GLfloat gkLightPos[4];
 GLfloat gkLightPos2[4];
 
-int mode = 0;
-
-enum { M_VIEW = 0, M_MOVE };
-
 // vbo variables
 GLuint vbo;
 struct cudaGraphicsResource *cuda_vbo_resource;
@@ -97,7 +93,7 @@ float g_fAnim = 0.0;
 // mouse controls
 int mouse_old_x, mouse_old_y;
 int mouse_buttons = 0;
-float rotate_x = 0.0, rotate_y = 0.0;
+float rotate_x = 30.0, rotate_y = 15.0;
 float translate_z = -3.0;
 
 StopWatchInterface *timer = NULL;
@@ -368,7 +364,7 @@ int main(int argc, char **argv)
 	}
 	cudaMalloc(&d_vec, size);
 
-	setAxis(0.001f, 0.0, 0.0);
+	setAxis(0.0, 0.001f, 0.0);
 
 	reset();
 
@@ -721,12 +717,28 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
             exit(EXIT_SUCCESS);
             break;
 
-		case 'v':
-			mode = M_VIEW;
+		case 'x':
+			setAxis(0.001f, 0.0, 0.0);
 			break;
 
-		case 'm':
-			mode = M_MOVE;
+		case 'X':
+			setAxis(-0.001f, 0.0, 0.0);
+			break;
+
+		case 'y':
+			setAxis(0.0, 0.001f, 0.0);
+			break;
+
+		case 'Y':
+			setAxis(0.0, -0.001f, 0.0);
+			break;
+
+		case 'z':
+			setAxis(0.0, 0.0, 0.001f);
+			break;
+
+		case 'Z':
+			setAxis(0.0, 0.0, -0.001f);
 			break;
 
 		case 'r':
