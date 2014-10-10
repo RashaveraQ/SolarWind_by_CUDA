@@ -76,6 +76,7 @@ const unsigned int window_height = 512;
 const unsigned int mesh_width    = 256;
 const unsigned int mesh_height   = 256;
 
+float4 *h_vec;
 float4 *d_vec;
 int mode = 0;
 
@@ -303,6 +304,13 @@ int findGraphicsGPU(char *name)
     return nGraphicsGPU;
 }
 
+void reset()
+{
+	int N = mesh_width * mesh_height;
+	size_t size = N * sizeof(float4);
+	cudaMemcpy(d_vec, h_vec, size, cudaMemcpyHostToDevice);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Program main
 ////////////////////////////////////////////////////////////////////////////////
@@ -330,18 +338,20 @@ int main(int argc, char **argv)
 
     printf("\n");
 
+//	psystem = new SolarWindSystem();
 	int N = mesh_width * mesh_height;
 	size_t size = N * sizeof(float4);
-	float4 *h_vec = (float4*)malloc(size);
+	h_vec = (float4*)malloc(size);
 	for (int i = 0; i < N; i++) {
 		h_vec[i] = make_float4(0.0f, 0.01f, 0.0f, 200.0f);
 	}
 	cudaMalloc(&d_vec, size);
-	cudaMemcpy(d_vec, h_vec, size, cudaMemcpyHostToDevice);
-	free(h_vec);
+
+	reset();
 
     runTest(argc, argv, ref_file);
 
+//	delete psystem;
     // cudaDeviceReset causes the driver to clean up all state. While
     // not mandatory in normal operation, it is good practice.  It is also
     // needed to ensure correct operation when the application is being
@@ -350,6 +360,7 @@ int main(int argc, char **argv)
     cudaDeviceReset();
 
 	cudaFree(d_vec);
+	free(h_vec);
 
     printf("%s completed, returned %s\n", sSDKsample, (g_TotalErrors == 0) ? "OK" : "ERROR!");
     exit(g_TotalErrors == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
@@ -415,12 +426,6 @@ bool initGL(int *argc, char **argv)
     return true;
 }
 
-void initSolarWindSystem()
-{
-	psystem = new SolarWindSystem();
-	psystem->reset();
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 //! Run a simple test for CUDA
 ////////////////////////////////////////////////////////////////////////////////
@@ -469,8 +474,6 @@ bool runTest(int argc, char **argv, char *ref_file)
             cudaGLSetGLDevice(gpuGetMaxGflopsDeviceId());
         }
 
-		initSolarWindSystem();
-
         // register callbacks
         glutDisplayFunc(display);
         glutKeyboardFunc(keyboard);
@@ -491,8 +494,6 @@ bool runTest(int argc, char **argv, char *ref_file)
         // start rendering mainloop
         glutMainLoop();
 
-		if (psystem)
-			delete psystem;
     }
 
     return true;
@@ -680,7 +681,7 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 			mode = M_MOVE;
 
 		case 'r':
-			psystem->reset();
+			reset();
 			break;
     }
 }
