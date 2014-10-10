@@ -736,13 +736,15 @@ void motion(int x, int y)
 	case GLUT_ACTIVE_CTRL:
 		if (mouse_buttons & 1)
 		{
-			float sx = sin(dx);
-			float cx = cos(dx);
-			float sy = sin(dy);
-			float cy = cos(dy);
-			setAxis(cx * h_axis.x - sx * cy * h_axis.y + sx * sy * h_axis.z, 
-			        sx * h_axis.x + cx * cy * h_axis.y - cx * sy * h_axis.z,
-					                     sy * h_axis.y +      cy * h_axis.z );
+			float th  = 0.01f * dx;
+			float phy = 0.01f * dy;
+			float sin_th = sin(th);
+			float cos_th = cos(th);
+			float sin_phy = sin(phy);
+			float cos_phy = cos(phy);
+			setAxis(cos_th * h_axis.x - sin_th * cos_phy * h_axis.y + sin_th * sin_phy * h_axis.z, 
+			        sin_th * h_axis.x + cos_th * cos_phy * h_axis.y - cos_th * sin_phy * h_axis.z,
+					                             sin_phy * h_axis.y +          cos_phy * h_axis.z );
 		}
 		else if (mouse_buttons & 4)
 		{
