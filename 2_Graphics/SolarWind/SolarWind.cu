@@ -79,6 +79,9 @@ float4 *d_vec;
 
 float3 h_axis;
 float3 *d_axis;
+float  h_axis_radius;
+GLfloat gkLightPos[4];
+GLfloat gkLightPos2[4];
 
 int mode = 0;
 
@@ -313,6 +316,18 @@ void reset()
 void setAxis(float x, float y, float z)
 {
 	h_axis = make_float3(x, y, z);
+	h_axis_radius = sqrtf(h_axis.x * h_axis.x + h_axis.y * h_axis.y + h_axis.z * h_axis.z);
+
+	gkLightPos[0] = 10000 * h_axis.x;
+	gkLightPos[1] = 10000 * h_axis.y;
+	gkLightPos[2] = 10000 * h_axis.z;
+	gkLightPos[3] = 0,1;
+
+	gkLightPos2[0] = -10000 * h_axis.x;
+	gkLightPos2[1] = -10000 * h_axis.y;
+	gkLightPos2[2] = -10000 * h_axis.z;
+	gkLightPos2[3] = 0,1;
+
 	size_t size = sizeof(float3);
 	cudaMalloc(&d_axis, size);
 	cudaMemcpy(d_axis, &h_axis, size, cudaMemcpyHostToDevice);
@@ -644,8 +659,6 @@ void display()
     glRotatef(rotate_y, 0.0, 1.0, 0.0);
 
 	// Earth
-	GLfloat gkLightPos[] = {  10000 * h_axis.x,  10000 * h_axis.y,  10000 * h_axis.z, 0,1};
-	GLfloat gkLightPos2[] ={ -10000 * h_axis.x, -10000 * h_axis.y, -10000 * h_axis.z, 0,1};
 	//簡易ライトセット
 	glEnable( GL_LIGHTING );
 	glEnable( GL_LIGHT0 );
@@ -656,9 +669,8 @@ void display()
 	glLightfv( GL_LIGHT1, GL_POSITION, gkLightPos2 );
 	glLightfv( GL_LIGHT1, GL_DIFFUSE, gkLightDiff2 );
 
-	GLdouble r = 100.0 * sqrt(h_axis.x * h_axis.x + h_axis.y * h_axis.y + h_axis.z * h_axis.z);
 	glColor3f(0.0, 0.0, 1.0);
-	glutSolidSphere(r, 20, 20);
+	glutSolidSphere(100.0 * h_axis_radius, 20, 20);
 
 	glDisable( GL_LIGHT1 );
 	glDisable( GL_LIGHT0 );
