@@ -78,6 +78,10 @@ const unsigned int mesh_height   = 256;
 
 float4 *h_vec;
 float4 *d_vec;
+
+float3 h_axis;
+float3 *d_axis;
+
 int mode = 0;
 
 SolarWindSystem *psystem = 0;
@@ -172,7 +176,7 @@ float XorFrand(float l, float h)
 //! Simple kernel to modify vertex positions in sine wave pattern
 //! @param data  data in global memory
 ///////////////////////////////////////////////////////////////////////////////
-__global__ void simple_vbo_kernel(float4 *pos, float4* vec, unsigned int width, unsigned int height, float time)
+__global__ void simple_vbo_kernel(float4 *pos, float4* vec, float3* pAxis, unsigned int width, unsigned int height, float time)
 {
     unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -189,9 +193,8 @@ __global__ void simple_vbo_kernel(float4 *pos, float4* vec, unsigned int width, 
 	float4 p = pos[y * width + x];
 	float4 V = vec[y * width + x];
 
-	float3 a = make_float3(0.0003f, 0.002f, 0.001f);
-	float3 n = make_float3(p.x - a.x, p.y - a.y, p.z - a.z);
-	float3 s = make_float3(p.x + a.x, p.y + a.y, p.z + a.z);
+	float3 n = make_float3(p.x - pAxis->x, p.y - pAxis->y, p.z - pAxis->z);
+	float3 s = make_float3(p.x + pAxis->x, p.y + pAxis->y, p.z + pAxis->z);
 	float  n2 = sqrtf(n.x * n.x + n.y * n.y + n.z * n.z);
 	float  s2 = sqrtf(s.x * s.x + s.y * s.y + s.z * s.z);
 	float  n3 = n2 * n2 * n2;
@@ -230,7 +233,7 @@ void launch_kernel(float4 *pos, unsigned int mesh_width, unsigned int mesh_heigh
     // execute the kernel
     dim3 block(8, 8, 1);
     dim3 grid(mesh_width / block.x, mesh_height / block.y, 1);
-    simple_vbo_kernel<<< grid, block>>>(pos, d_vec, mesh_width, mesh_height, time);
+    simple_vbo_kernel<<< grid, block>>>(pos, d_vec, d_axis, mesh_width, mesh_height, time);
 }
 
 bool checkHW(char *name, const char *gpuType, int dev)
@@ -346,6 +349,11 @@ int main(int argc, char **argv)
 		h_vec[i] = make_float4(0.0f, 0.01f, 0.0f, 200.0f);
 	}
 	cudaMalloc(&d_vec, size);
+
+	h_axis = make_float3(0.0003f, 0.002f, 0.001f);
+	size = sizeof(float3);
+	cudaMalloc(&d_axis, size);
+	cudaMemcpy(d_axis, &h_axis, size, cudaMemcpyHostToDevice);
 
 	reset();
 
