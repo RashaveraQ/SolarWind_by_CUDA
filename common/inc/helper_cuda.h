@@ -280,6 +280,10 @@ static const char *_cudaGetErrorEnum(cudaError_t error)
 
         case cudaErrorApiFailureBase:
             return "cudaErrorApiFailureBase";
+
+        /* Since CUDA 8.0*/        
+        case cudaErrorNvlinkUncorrectable :   
+            return "cudaErrorNvlinkUncorrectable";
     }
 
     return "<unknown>";
@@ -370,6 +374,18 @@ static const char *_cudaGetErrorEnum(CUresult error)
         case CUDA_ERROR_CONTEXT_ALREADY_IN_USE:
             return "CUDA_ERROR_CONTEXT_ALREADY_IN_USE";
 
+        case CUDA_ERROR_PEER_ACCESS_UNSUPPORTED:
+            return "CUDA_ERROR_PEER_ACCESS_UNSUPPORTED";
+
+        case CUDA_ERROR_INVALID_PTX:
+            return "CUDA_ERROR_INVALID_PTX";
+
+        case CUDA_ERROR_INVALID_GRAPHICS_CONTEXT:
+            return "CUDA_ERROR_INVALID_GRAPHICS_CONTEXT";
+
+        case CUDA_ERROR_NVLINK_UNCORRECTABLE:
+            return "CUDA_ERROR_NVLINK_UNCORRECTABLE";
+
         case CUDA_ERROR_INVALID_SOURCE:
             return "CUDA_ERROR_INVALID_SOURCE";
 
@@ -393,6 +409,9 @@ static const char *_cudaGetErrorEnum(CUresult error)
 
         case CUDA_ERROR_NOT_READY:
             return "CUDA_ERROR_NOT_READY";
+
+        case CUDA_ERROR_ILLEGAL_ADDRESS:
+            return "CUDA_ERROR_ILLEGAL_ADDRESS";
 
         case CUDA_ERROR_LAUNCH_FAILED:
             return "CUDA_ERROR_LAUNCH_FAILED";
@@ -429,6 +448,27 @@ static const char *_cudaGetErrorEnum(CUresult error)
 
         case CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED:
             return "CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED";
+
+        case CUDA_ERROR_HARDWARE_STACK_ERROR:
+            return "CUDA_ERROR_HARDWARE_STACK_ERROR";
+
+        case CUDA_ERROR_ILLEGAL_INSTRUCTION:
+            return "CUDA_ERROR_ILLEGAL_INSTRUCTION";
+
+        case CUDA_ERROR_MISALIGNED_ADDRESS:
+            return "CUDA_ERROR_MISALIGNED_ADDRESS";
+
+        case CUDA_ERROR_INVALID_ADDRESS_SPACE:
+            return "CUDA_ERROR_INVALID_ADDRESS_SPACE";
+
+        case CUDA_ERROR_INVALID_PC:
+            return "CUDA_ERROR_INVALID_PC";
+
+        case CUDA_ERROR_NOT_PERMITTED:
+            return "CUDA_ERROR_NOT_PERMITTED";
+
+        case CUDA_ERROR_NOT_SUPPORTED:
+            return "CUDA_ERROR_NOT_SUPPORTED";
 
         case CUDA_ERROR_UNKNOWN:
             return "CUDA_ERROR_UNKNOWN";
@@ -467,6 +507,12 @@ static const char *_cudaGetErrorEnum(cublasStatus_t error)
 
         case CUBLAS_STATUS_INTERNAL_ERROR:
             return "CUBLAS_STATUS_INTERNAL_ERROR";
+
+        case CUBLAS_STATUS_NOT_SUPPORTED:
+            return "CUBLAS_STATUS_NOT_SUPPORTED";
+
+        case CUBLAS_STATUS_LICENSE_ERROR:
+            return "CUBLAS_STATUS_LICENSE_ERROR";
     }
 
     return "<unknown>";
@@ -526,6 +572,9 @@ static const char *_cudaGetErrorEnum(cufftResult error)
 
         case CUFFT_LICENSE_ERROR:
             return "CUFFT_LICENSE_ERROR";
+
+        case CUFFT_NOT_SUPPORTED:
+            return "CUFFT_NOT_SUPPORTED";
     }
 
     return "<unknown>";
@@ -568,6 +617,43 @@ static const char *_cudaGetErrorEnum(cusparseStatus_t error)
     }
 
     return "<unknown>";
+}
+#endif
+
+#ifdef CUSOLVER_COMMON_H_
+//cuSOLVER API errors
+static const char *_cudaGetErrorEnum(cusolverStatus_t error)
+{
+   switch(error)
+   {
+       case CUSOLVER_STATUS_SUCCESS:
+           return "CUSOLVER_STATUS_SUCCESS";
+       case CUSOLVER_STATUS_NOT_INITIALIZED:
+           return "CUSOLVER_STATUS_NOT_INITIALIZED";
+       case CUSOLVER_STATUS_ALLOC_FAILED:
+           return "CUSOLVER_STATUS_ALLOC_FAILED";
+       case CUSOLVER_STATUS_INVALID_VALUE:
+           return "CUSOLVER_STATUS_INVALID_VALUE";
+       case CUSOLVER_STATUS_ARCH_MISMATCH:
+           return "CUSOLVER_STATUS_ARCH_MISMATCH";
+       case CUSOLVER_STATUS_MAPPING_ERROR:
+           return "CUSOLVER_STATUS_MAPPING_ERROR";
+       case CUSOLVER_STATUS_EXECUTION_FAILED:
+           return "CUSOLVER_STATUS_EXECUTION_FAILED";
+       case CUSOLVER_STATUS_INTERNAL_ERROR:
+           return "CUSOLVER_STATUS_INTERNAL_ERROR";
+       case CUSOLVER_STATUS_MATRIX_TYPE_NOT_SUPPORTED:
+           return "CUSOLVER_STATUS_MATRIX_TYPE_NOT_SUPPORTED";
+       case CUSOLVER_STATUS_NOT_SUPPORTED :
+           return "CUSOLVER_STATUS_NOT_SUPPORTED ";
+       case CUSOLVER_STATUS_ZERO_PIVOT:
+           return "CUSOLVER_STATUS_ZERO_PIVOT";
+       case CUSOLVER_STATUS_INVALID_LICENSE:
+           return "CUSOLVER_STATUS_INVALID_LICENSE";
+    }
+
+    return "<unknown>";
+
 }
 #endif
 
@@ -871,6 +957,14 @@ static const char *_cudaGetErrorEnum(NppStatus error)
             return "NPP_DIVIDE_BY_ZERO_WARNING";
 #endif
 
+#if ((NPP_VERSION_MAJOR << 12) + (NPP_VERSION_MINOR << 4)) >= 0x7000
+        /* These are 7.0 or higher */
+        case NPP_OVERFLOW_ERROR:
+            return "NPP_OVERFLOW_ERROR";
+
+        case NPP_CORRUPTED_DATA_ERROR:
+            return "NPP_CORRUPTED_DATA_ERROR";
+#endif
     }
 
     return "<unknown>";
@@ -925,6 +1019,12 @@ inline void __getLastCudaError(const char *errorMessage, const char *file, const
 #define MAX(a,b) (a > b ? a : b)
 #endif
 
+// Float To Int conversion
+inline int ftoi(float value)
+{
+    return (value >= 0 ? (int)(value + 0.5) : (int)(value - 0.5));
+}
+
 // Beginning of GPU Architecture definitions
 inline int _ConvertSMVer2Cores(int major, int minor)
 {
@@ -937,10 +1037,6 @@ inline int _ConvertSMVer2Cores(int major, int minor)
 
     sSMtoCores nGpuArchCoresPerSM[] =
     {
-        { 0x10,  8 }, // Tesla Generation (SM 1.0) G80 class
-        { 0x11,  8 }, // Tesla Generation (SM 1.1) G8x class
-        { 0x12,  8 }, // Tesla Generation (SM 1.2) G9x class
-        { 0x13,  8 }, // Tesla Generation (SM 1.3) GT200 class
         { 0x20, 32 }, // Fermi Generation (SM 2.0) GF100 class
         { 0x21, 48 }, // Fermi Generation (SM 2.1) GF10x class
         { 0x30, 192}, // Kepler Generation (SM 3.0) GK10x class
@@ -948,6 +1044,11 @@ inline int _ConvertSMVer2Cores(int major, int minor)
         { 0x35, 192}, // Kepler Generation (SM 3.5) GK11x class
         { 0x37, 192}, // Kepler Generation (SM 3.7) GK21x class
         { 0x50, 128}, // Maxwell Generation (SM 5.0) GM10x class
+        { 0x52, 128}, // Maxwell Generation (SM 5.2) GM20x class
+        { 0x53, 128}, // Maxwell Generation (SM 5.3) GM20x class
+        { 0x60, 64 }, // Pascal Generation (SM 6.0) GP100 class
+        { 0x61, 128}, // Pascal Generation (SM 6.1) GP10x class
+        { 0x62, 128}, // Pascal Generation (SM 6.2) GP10x class
         {   -1, -1 }
     };
 
